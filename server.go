@@ -91,14 +91,14 @@ func handleInput(in <-chan string, client *Client) {
   for {
     message := <- in
     message = strings.TrimSpace(message)
-    action, rest := getAction(message)
+    action, body := getAction(message)
 
     if (action != "") {
       switch action {
         case "message":
-          sendMessage("message", rest, client, false)
+          sendMessage("message", body, client, false)
         case "user":
-          client.Username = rest
+          client.Username = body
           sendMessage("enter", "", client, false)
         case "leave":
           sendMessage("leave", "", client, false)
