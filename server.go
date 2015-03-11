@@ -53,7 +53,10 @@ func main() {
   for {
     // accept connections
     conn, err := psock.Accept()
-    if err != nil { return }
+    if err != nil {
+      fmt.Printf("Can't accept connections %v\n", err)
+      return
+    }
 
     // keep track of the client details
     client := Client{Connection: conn}
@@ -118,8 +121,6 @@ func sendMessage(messageType string, message string, client *Client, thisClientO
       // you won't hear any activity if you are anonymous unless thisClientOnly
       // when current client will *only* be messaged
       fmt.Fprintf(_client.Connection, message)
-    } else {
-      fmt.Printf("not sending message\n")
     }
   }
 }
