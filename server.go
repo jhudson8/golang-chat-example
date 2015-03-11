@@ -23,21 +23,23 @@ type Client struct {
 }
 
 // Close the client connection and clenup
-func (client Client) Close() {
+func (client *Client) Close(doSendMessage bool) {
+  if (doSendMessage) {
+    // if we send the close command, the connection will terminate causing another close
+    // which will send the message
+    sendMessage("leave", "", client, false)
+  }
   client.Connection.Close();
-  // FIXME need to clean the connection up from availableClients
+  clients = removeEntry(client, clients);
 }
 
 // Register the connection and cache it
 func (client *Client) Register() {
-  numClients := len(clients)
-  availableClients[numClients] = client;
-  clients = availableClients[0:numClients+1]
+  clients = append(clients, client);
 }
 
 
 // static client list
-var availableClients [256]*Client
 var clients []*Client
 
 
@@ -77,7 +79,7 @@ func waitForInput(out chan string, client *Client) {
     line, err := bufio.NewReader(client.Connection).ReadBytes('\n')
     if err != nil {
       // connection has been closed, remove the client
-      client.Close();
+      client.Close(true);
       return
     }
     out <- string(line)
@@ -101,8 +103,7 @@ func handleInput(in <-chan string, client *Client) {
           client.Username = body
           sendMessage("enter", "", client, false)
         case "leave":
-          sendMessage("leave", "", client, false)
-          client.Close();
+          client.Close(false);
         default:
           sendMessage("unrecognized", action, client, true)
       }
@@ -133,4 +134,26 @@ func getAction(message string) (string, string) {
     return res[0][1], res[0][2]
   }
   return "", ""
+}
+
+// remove client entry from stored clients
+func removeEntry(client *Client, arr []*Client) []*Client {
+  rtn := arr
+  index := -1
+  for i, value := range arr {
+    if (value == client) {
+      index = i;
+      break;
+    }
+  }
+
+  if (index >= 0) {
+    // we have a match, create a new array without the match
+    rtn = make([]*Client, len(arr)-1)
+    copy(rtn, arr[:index])
+    copy(rtn[index:], arr[index+1:])
+    fmt.Printf("found entry and new arr is %v", rtn);
+  }
+
+  return rtn;
 }
