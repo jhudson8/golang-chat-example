@@ -40,3 +40,8 @@ When someone leaves the chat server
 ```
 /leave [username]
 ```
+
+When an unrecognized command is entered by the client
+```
+/unrecognized [username] commandName
+```
