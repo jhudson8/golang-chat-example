@@ -23,9 +23,18 @@ type Client struct {
 }
 
 // Close the client connection and clenup
-func (c Client) Close() {
-  c.Connection.Close();
+func (client Client) Close() {
+  client.Connection.Close();
+  // FIXME need to clean the connection up from availableClients
 }
+
+// Register the connection and cache it
+func (client *Client) Register() {
+  numClients := len(clients)
+  availableClients[numClients] = client;
+  clients = availableClients[0:numClients+1]
+}
+
 
 // static client list
 var availableClients [256]*Client
@@ -48,7 +57,7 @@ func main() {
 
     // keep track of the client details
     client := Client{Connection: conn}
-    registerClient(&client);
+    client.Register();
 
     // allow non-blocking client request handling
     channel := make(chan string)
@@ -123,11 +132,4 @@ func getAction(message string) (string, string) {
     return res[0][1], res[0][2]
   }
   return "", ""
-}
-
-// keep track of the new client
-func registerClient(client *Client) {
-  numClients := len(clients)
-  availableClients[numClients] = client;
-  clients = availableClients[0:numClients+1]
 }
