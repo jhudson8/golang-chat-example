@@ -14,6 +14,7 @@ import (
   "bufio"
   "strings"
   "regexp"
+  "./config"
 )
 
 // Container for client username and connection details
@@ -46,12 +47,13 @@ var clients []*Client
 // program main
 func main() {
   // start the server
-  psock, err := net.Listen("tcp", ":5000")
+  properties := config.Load()
+  psock, err := net.Listen("tcp", ":" + properties.Port)
   if err != nil {
     fmt.Printf("Can't create server %v\n", err)
     return
   }
-  println("Chat server started...")
+  fmt.Printf("Chat server started on port %v...\n", properties.Port)
  
   for {
     // accept connections
@@ -70,7 +72,7 @@ func main() {
     go waitForInput(channel, &client)
     go handleInput(channel, &client)
 
-    println("User connection")
+    sendMessage("ready", "", &client, true)
   }
 }
 
@@ -78,8 +80,9 @@ func main() {
 func waitForInput(out chan string, client *Client) {
   defer close(out)
  
+  reader := bufio.NewReader(client.Connection)
   for {
-    line, err := bufio.NewReader(client.Connection).ReadBytes('\n')
+    line, err := reader.ReadBytes('\n')
     if err != nil {
       // connection has been closed, remove the client
       client.Close(true);
@@ -93,24 +96,28 @@ func waitForInput(out chan string, client *Client) {
 // messages must be in the format of /{action} {content} where content is optional depending on the action
 // supported actions are "user", "chat", and "quit".  the "user" must be set before any chat messages are allowed
 func handleInput(in <-chan string, client *Client) {
-  fmt.Printf("input received \"%v\"\n", in);
 
   for {
     message := <- in
-    message = strings.TrimSpace(message)
-    action, body := getAction(message)
+    if (message != "") {
+      message = strings.TrimSpace(message);
+      fmt.Printf("input received \"%v\"\n", message);
+      message = strings.TrimSpace(message)
+      action, body := getAction(message)
 
-    if (action != "") {
-      switch action {
-        case "message":
-          sendMessage("message", body, client, false)
-        case "user":
-          client.Username = body
-          sendMessage("enter", "", client, false)
-        case "leave":
-          client.Close(false);
-        default:
-          sendMessage("unrecognized", action, client, true)
+      if (action != "") {
+        switch action {
+          case "message":
+            sendMessage("message", body, client, false)
+          case "user":
+            // TODO don't allow "[" or "]" in the username
+            client.Username = body
+            sendMessage("enter", "", client, false)
+          case "leave":
+            client.Close(false);
+          default:
+            sendMessage("unrecognized", action, client, true)
+        }
       }
     }
   }
@@ -118,21 +125,24 @@ func handleInput(in <-chan string, client *Client) {
 
 // sent a message to all clients (except the sender)
 func sendMessage(messageType string, message string, client *Client, thisClientOnly bool) {
-  message = fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
   if (thisClientOnly) {
-      fmt.Printf("sending message to only %v \"%v\"\n", client.Username, message)
-    } else {
-      fmt.Printf("sending message to all but %v \"%v\"\n", client.Username, message)
-    }
-  
+    // this message is only for the provided client
+    message = fmt.Sprintf("/%v", messageType);
+    fmt.Printf("sending message to current client %v \"%v\"\n", client.Username, message)
+    fmt.Fprintln(client.Connection, message)
+  } else if (client.Username != "") {
 
-  for _, _client := range clients {
-    // write the message to the client
-    if ((thisClientOnly && _client.Username == client.Username) ||
-        (!thisClientOnly && _client != client && _client.Username != "")) {
-      // you won't hear any activity if you are anonymous unless thisClientOnly
-      // when current client will *only* be messaged
-      fmt.Fprintln(_client.Connection, message)
+    // this message is for all but the provided client
+    message = fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
+    fmt.Printf("sending message to all but %v \"%v\"\n", client.Username, message)
+    for _, _client := range clients {
+      // write the message to the client
+      if ((thisClientOnly && _client.Username == client.Username) ||
+          (!thisClientOnly && _client != client && _client.Username != "")) {
+        // you won't hear any activity if you are anonymous unless thisClientOnly
+        // when current client will *only* be messaged
+        fmt.Fprintln(_client.Connection, message)
+      }
     }
   }
 }
