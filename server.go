@@ -27,6 +27,14 @@ func (c Client) Close() {
   c.Connection.Close();
 }
 
+// Register the client in the global cache
+func (c Client) Register() {
+  fmt.Printf("Adding client %v\n", c)
+  numClients := len(clients)
+  availableClients[numClients] = c;
+  clients = availableClients[0:numClients+1]
+}
+
 // static client list
 var availableClients [256]Client
 var clients []Client
@@ -35,7 +43,10 @@ var clients []Client
 func main() {
   // start the server
   psock, err := net.Listen("tcp", ":5000")
-  if err != nil { return }
+  if err != nil {
+    fmt.Printf("Can't create server %v\n", err)
+    return
+  }
  
   for {
     // accept connections
@@ -44,7 +55,7 @@ func main() {
 
     // keep track of the client details
     client := Client{Connection: conn}
-    addClient(client);
+    client.Register();
 
     // allow non-blocking client request handling
     channel := make(chan string)
@@ -108,12 +119,4 @@ func getAction(message string) (string, string) {
     return res[0][1], res[0][2]
   }
   return "", ""
-}
-
-// cache a new client
-func addClient(value Client) {
-  fmt.Printf("Adding client %v\n", value)
-  numClients := len(clients)
-  availableClients[numClients] = value;
-  clients = availableClients[0:numClients+1]
 }
