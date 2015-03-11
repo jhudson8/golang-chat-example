@@ -18,6 +18,25 @@ And, until the client has been created, in another terminal window
 ```
 > telnet localhost 5000
 > /user joe
-> /chat hello
-> /quit
+> /message hello
+> /leave
+```
+
+Note: you won't get any messages unless you connet with multiple clients (messages won't be echoed to sender).  You won't hear any activity if you are anonymous so you muse use ```/user {username}```.
+
+Client messages are commands just like server messages.  You will see
+
+When someone enters the chat server (and sets their username)
+```
+/enter [username]
+```
+
+When someone enters a message
+```
+/message [username] the message
+```
+
+When someone leaves the chat server
+```
+/leave [username]
 ```

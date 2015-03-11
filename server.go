@@ -3,7 +3,7 @@
 // Simple chat client is intended to be used but a standard telnet connection can be used
 // > telnet {host} {port}
 // > /user {username}
-// > /chat {message}
+// > /message {message}
 //
 // reference: https://parroty00.wordpress.com/2013/07/18/golang-tcp-server-example/
 package main
@@ -27,17 +27,10 @@ func (c Client) Close() {
   c.Connection.Close();
 }
 
-// Register the client in the global cache
-func (c Client) Register() {
-  fmt.Printf("Adding client %v\n", c)
-  numClients := len(clients)
-  availableClients[numClients] = c;
-  clients = availableClients[0:numClients+1]
-}
-
 // static client list
-var availableClients [256]Client
-var clients []Client
+var availableClients [256]*Client
+var clients []*Client
+
 
 // program main
 func main() {
@@ -55,17 +48,17 @@ func main() {
 
     // keep track of the client details
     client := Client{Connection: conn}
-    client.Register();
+    registerClient(&client);
 
     // allow non-blocking client request handling
     channel := make(chan string)
-    go waitForInput(channel, client)
-    go handleInput(channel, client)
+    go waitForInput(channel, &client)
+    go handleInput(channel, &client)
   }
 }
 
 // wait for client input (buffered by newlines) and signal the channel
-func waitForInput(out chan string, client Client) {
+func waitForInput(out chan string, client *Client) {
   defer close(out)
  
   for {
@@ -82,7 +75,7 @@ func waitForInput(out chan string, client Client) {
 // listen for channel updates for a client and handle the message
 // messages must be in the format of /{action} {content} where content is optional depending on the action
 // supported actions are "user", "chat", and "quit".  the "user" must be set before any chat messages are allowed
-func handleInput(in <-chan string, client Client) {
+func handleInput(in <-chan string, client *Client) {
   for {
     message := <- in
     message = strings.TrimSpace(message)
@@ -90,24 +83,35 @@ func handleInput(in <-chan string, client Client) {
 
     if (action != "") {
       switch action {
-        case "chat":
-          sendMessage(rest, client)
+        case "message":
+          sendMessage("message", rest, client, false)
         case "user":
           client.Username = rest
-        case "quit":
+          sendMessage("enter", "", client, false)
+        case "leave":
+          sendMessage("leave", "", client, false)
           client.Close();
+        default:
+          sendMessage("unrecognized", action, client, true)
       }
     }
   }
 }
 
 // sent a message to all clients (except the sender)
-func sendMessage(message string, client Client) {
-  message = fmt.Sprintf("[%v] %v\n", client.Username, message);
+func sendMessage(messageType string, message string, client *Client, thisClientOnly bool) {
+  message = fmt.Sprintf("/%v [%v] %v\n", messageType, client.Username, message);
 
-  for _, client := range clients {
+  for _, _client := range clients {
     // write the message to the client
-    fmt.Fprintf(client.Connection, message)
+    if ((thisClientOnly && _client.Username == client.Username) ||
+        (!thisClientOnly && _client != client && _client.Username != "")) {
+      // you won't hear any activity if you are anonymous unless thisClientOnly
+      // when current client will *only* be messaged
+      fmt.Fprintf(_client.Connection, message)
+    } else {
+      fmt.Printf("not sending message\n")
+    }
   }
 }
 
@@ -119,4 +123,11 @@ func getAction(message string) (string, string) {
     return res[0][1], res[0][2]
   }
   return "", ""
+}
+
+// keep track of the new client
+func registerClient(client *Client) {
+  numClients := len(clients)
+  availableClients[numClients] = client;
+  clients = availableClients[0:numClients+1]
 }
