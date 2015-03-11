@@ -22,7 +22,7 @@ And, until the client has been created, in another terminal window
 > /leave
 ```
 
-Note: you won't get any messages unless you connet with multiple clients (messages won't be echoed to sender).  You won't hear any activity if you are anonymous so you muse use ```/user {username}```.
+Note: you won't get any messages unless you connect with multiple clients (messages won't be echoed to sender).  You won't hear any activity if you are anonymous so you muse use ```/user {username}```.
 
 Client messages are commands just like server messages.  You will see
 
