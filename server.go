@@ -51,6 +51,7 @@ func main() {
     fmt.Printf("Can't create server %v\n", err)
     return
   }
+  println("Chat server started...")
  
   for {
     // accept connections
@@ -68,6 +69,8 @@ func main() {
     channel := make(chan string)
     go waitForInput(channel, &client)
     go handleInput(channel, &client)
+
+    println("User connection")
   }
 }
 
@@ -90,6 +93,8 @@ func waitForInput(out chan string, client *Client) {
 // messages must be in the format of /{action} {content} where content is optional depending on the action
 // supported actions are "user", "chat", and "quit".  the "user" must be set before any chat messages are allowed
 func handleInput(in <-chan string, client *Client) {
+  fmt.Printf("input received \"%v\"\n", in);
+
   for {
     message := <- in
     message = strings.TrimSpace(message)
@@ -113,7 +118,13 @@ func handleInput(in <-chan string, client *Client) {
 
 // sent a message to all clients (except the sender)
 func sendMessage(messageType string, message string, client *Client, thisClientOnly bool) {
-  message = fmt.Sprintf("/%v [%v] %v\n", messageType, client.Username, message);
+  message = fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
+  if (thisClientOnly) {
+      fmt.Printf("sending message to only %v \"%v\"\n", client.Username, message)
+    } else {
+      fmt.Printf("sending message to all but %v \"%v\"\n", client.Username, message)
+    }
+  
 
   for _, _client := range clients {
     // write the message to the client
@@ -121,7 +132,7 @@ func sendMessage(messageType string, message string, client *Client, thisClientO
         (!thisClientOnly && _client != client && _client.Username != "")) {
       // you won't hear any activity if you are anonymous unless thisClientOnly
       // when current client will *only* be messaged
-      fmt.Fprintf(_client.Connection, message)
+      fmt.Fprintln(_client.Connection, message)
     }
   }
 }
@@ -152,7 +163,6 @@ func removeEntry(client *Client, arr []*Client) []*Client {
     rtn = make([]*Client, len(arr)-1)
     copy(rtn, arr[:index])
     copy(rtn[index:], arr[index+1:])
-    fmt.Printf("found entry and new arr is %v", rtn);
   }
 
   return rtn;
