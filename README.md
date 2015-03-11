@@ -10,7 +10,7 @@ To run the server
 ```
 > git clone https://github.com/jhudson8/golang-chat-example.git
 > cd golang-chat-example
-> go 
+> go run server.go
 ```
 
 And, until the client has been created, in another terminal window
