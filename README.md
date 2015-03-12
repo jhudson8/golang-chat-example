@@ -69,7 +69,7 @@ The message query will only use the messages from the running server (previously
 
 Chat Log
 ----------
-Log files are in CSV format with the following columns
+Log files are in CSV format with the columns shown below.  You *must* set the ```LogFile``` config value to be the absolute file location or no logs will be created.
 
 1. ***username***: the user that performed the action
 2. ***action***: the action that was taken (```message```/```enter```/```leave```/```connect```/```disconnect```)
