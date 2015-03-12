@@ -21,6 +21,7 @@ Edit the server/client configuration as you need (```config.json```)
   "HasLeftTheRoomMessage": "[%s] has left the room \"%s\"",
   "HasEnteredTheLobbyMessage": "[%s] has entered the lobby",
   "HasLeftTheLobbyMessage": "[%s] has left the lobby",
+  "IgnoringMessage": "You are ignoring %s",
   "ReceivedAMessage": "[%s] says: %s",
   "LogFile": ""
 }
