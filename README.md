@@ -1,47 +1,38 @@
 # golang-chat-example
-Simple example to help me learn golang
-
-A chat client (TODO) is intended to be used with the server, but a standard telnet connection can be used
-
-Right now, the server will run on port ```5000``` but it will eventually accept port details from a config file.
+Simple chat client and server example to help me learn golang
 
 To run the server
 
+Clone the repo
 ```
 > git clone https://github.com/jhudson8/golang-chat-example.git
 > cd golang-chat-example
+```
+
+Edit the server/client configuration as you need (```config.json```)
+```
+{
+  "Port": "5555",
+  "Hostname": "localhost",
+  "HasEnteredTheRoomMessage": "[%s] has entered the room \"%s\"",
+  "HasLeftTheRoomMessage": "[%s] has left the room \"%s\"",
+  "HasEnteredTheLobbyMessage": "[%s] has entered the lobby",
+  "HasLeftTheLobbyMessage": "[%s] has left the lobby",
+  "ReceivedAMessage": "[%s] says: %s",
+  "LogFile": ""
+}
+```
+
+Start the server
+```
 > go run server.go
 ```
 
-And, until the client has been created, in another terminal window
-
+In another terminal window, create as many clients as you wish
 ```
-> telnet localhost 5000
-> /user joe
-> /message hello
-> /leave
-```
-
-Note: you won't get any messages unless you connect with multiple clients (messages won't be echoed to sender).  You won't hear any activity if you are anonymous so you muse use ```/user {username}```.
-
-Client messages are commands just like server messages.  You will see
-
-When someone enters the chat server (and sets their username)
-```
-/enter [username]
-```
-
-When someone enters a message
-```
-/message [username] the message
-```
-
-When someone leaves the chat server
-```
-/leave [username]
-```
-
-When an unrecognized command is entered by the client
-```
-/unrecognized [username] commandName
+> go run client.go {username}       // for example: "go run client.go joe"
+hello, this message will be sent  // all clients connected to the lobby will receive this message
+/enter SomeRoom                   // enter the private room called "SomeRoom" - only other clients in this room will see messages
+/leave SomeRoom                   // go back to the lobby
+/disconnect                       // disconnect from the chat server
 ```
