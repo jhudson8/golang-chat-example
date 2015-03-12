@@ -14,6 +14,8 @@ import (
   "bufio"
   "strings"
   "regexp"
+  "time"
+  "os"
   "./config"
 )
 
@@ -29,6 +31,8 @@ type Client struct {
   Room string
   // list of usernames we are ignoring
   Ignore []string
+  //
+  Properties config.Properties
 }
 
 // Close the client connection and clenup
@@ -36,7 +40,7 @@ func (client *Client) Close(doSendMessage bool) {
   if (doSendMessage) {
     // if we send the close command, the connection will terminate causing another close
     // which will send the message
-    sendMessage("disconnect", "", client, false)
+    sendMessage("disconnect", "", client, false, client.Properties)
   }
   client.Connection.Close();
   clients = removeEntry(client, clients);
@@ -57,30 +61,25 @@ func main() {
   // start the server
   properties := config.Load()
   psock, err := net.Listen("tcp", ":" + properties.Port)
-  if err != nil {
-    fmt.Printf("Can't create server %v\n", err)
-    return
-  }
+  checkForError(err, "Can't create server")
+
   fmt.Printf("Chat server started on port %v...\n", properties.Port)
  
   for {
     // accept connections
     conn, err := psock.Accept()
-    if err != nil {
-      fmt.Printf("Can't accept connections %v\n", err)
-      return
-    }
+    checkForError(err, "Can't accept connections")
 
     // keep track of the client details
-    client := Client{Connection: conn, Room: GLOBAL_ROOM}
+    client := Client{Connection: conn, Room: GLOBAL_ROOM, Properties: properties}
     client.Register();
 
     // allow non-blocking client request handling
     channel := make(chan string)
     go waitForInput(channel, &client)
-    go handleInput(channel, &client)
+    go handleInput(channel, &client, properties)
 
-    sendMessage("ready", "", &client, true)
+    sendMessage("ready", properties.Port, &client, true, properties)
   }
 }
 
@@ -103,7 +102,7 @@ func waitForInput(out chan string, client *Client) {
 // listen for channel updates for a client and handle the message
 // messages must be in the format of /{action} {content} where content is optional depending on the action
 // supported actions are "user", "chat", and "quit".  the "user" must be set before any chat messages are allowed
-func handleInput(in <-chan string, client *Client) {
+func handleInput(in <-chan string, client *Client, props config.Properties) {
 
   for {
     message := <- in
@@ -118,12 +117,12 @@ func handleInput(in <-chan string, client *Client) {
 
           // the user has submitted a message
           case "message":
-            sendMessage("message", body, client, false)
+            sendMessage("message", body, client, false, props)
 
           // the user has provided their username (initialization handshake)
           case "user":
             client.Username = body
-            sendMessage("connect", "", client, false)
+            sendMessage("connect", "", client, false, props)
 
           // the user is disconnecting
           case "disconnect":
@@ -133,18 +132,18 @@ func handleInput(in <-chan string, client *Client) {
           case "enter":
             if (body != "") {
               client.Room = body
-              sendMessage("enter", body, client, false)
+              sendMessage("enter", body, client, false, props)
             }
 
           // the user is leaving the current room
           case "leave":
             if (client.Room != GLOBAL_ROOM) {
-              sendMessage("leave", client.Room, client, false)
+              sendMessage("leave", client.Room, client, false, props)
               client.Room = GLOBAL_ROOM
             }
 
           default:
-            sendMessage("unrecognized", action, client, true)
+            sendMessage("unrecognized", action, client, true, props)
         }
       }
     }
@@ -152,18 +151,20 @@ func handleInput(in <-chan string, client *Client) {
 }
 
 // sent a message to all clients (except the sender)
-func sendMessage(messageType string, message string, client *Client, thisClientOnly bool) {
+func sendMessage(messageType string, message string, client *Client, thisClientOnly bool, props config.Properties) {
 
   if (thisClientOnly) {
     // this message is only for the provided client
     message = fmt.Sprintf("/%v", messageType);
-    fmt.Printf("sending message to current client %v \"%v\"\n", client.Username, message)
+    // fmt.Printf("sending message to current client %v \"%v\"\n", client.Username, message)
     fmt.Fprintln(client.Connection, message)
   } else if (client.Username != "") {
 
+    logAction(messageType, message, client, props);
+
     // this message is for all but the provided client
     message = fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
-    fmt.Printf("sending message to all \"%v\"\n", message)
+    // fmt.Printf("sending message to all \"%v\"\n", message)
 
     for _, _client := range clients {
       // write the message to the client
@@ -212,4 +213,40 @@ func removeEntry(client *Client, arr []*Client) []*Client {
   }
 
   return rtn;
+}
+
+// fail if an error is provided and print out the message
+func checkForError(err error, message string) {
+  if err != nil {
+      println(message + ": ", err.Error())
+      os.Exit(1)
+  }
+}
+
+// log an action to the log file
+// action: the action
+//   - "enter": enter a room
+//   - "leave": leave a room
+//   - "connect": connect to the lobby
+//   - "disconnect": disconnect from the lobby
+//   - "message": post a message
+//   - "ignore": ignore a user
+// message: message/context appropriate for the action
+// client: the initiating client
+func logAction(action string, message string, client *Client, props config.Properties) {
+  if (props.LogFile != "") {
+    if (message == "") {
+      message = "N/A"
+    }
+
+    logMessage := fmt.Sprintf("username: %s, action: %s, value: %s, timestamp: %d, ip: %s\n",
+      client.Username, action, message, time.Now().String(), client.Connection.RemoteAddr())
+
+    f, createErr := os.OpenFile(props.LogFile, os.O_RDWR|os.O_APPEND, 0666)
+    checkForError(createErr, "Can't open or create log file")
+    defer f.Close()
+
+    _, writeErr := f.Write([]byte(logMessage))
+    checkForError(writeErr, "Can't write to log file")
+  }
 }

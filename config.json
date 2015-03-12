@@ -5,5 +5,6 @@
   "HasLeftTheRoomMessage": "[%s] has left the room \"%s\"",
   "HasEnteredTheLobbyMessage": "[%s] has entered the lobby",
   "HasLeftTheLobbyMessage": "[%s] has left the lobby",
-  "ReceivedAMessage": "[%s] says: %s"
+  "ReceivedAMessage": "[%s] says: %s",
+  "LogFile": ""
 }

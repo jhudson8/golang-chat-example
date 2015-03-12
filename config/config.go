@@ -16,6 +16,7 @@ type Properties struct {
   HasEnteredTheLobbyMessage string
   HasLeftTheLobbyMessage string
   ReceivedAMessage string
+  LogFile string
 }
 
 func Load() Properties {
@@ -42,5 +43,6 @@ func Load() Properties {
     HasEnteredTheLobbyMessage: dat["HasEnteredTheLobbyMessage"].(string),
     HasLeftTheLobbyMessage: dat["HasLeftTheLobbyMessage"].(string),
     ReceivedAMessage: dat["ReceivedAMessage"].(string),
+    LogFile: dat["LogFile"].(string),
   }
 }
