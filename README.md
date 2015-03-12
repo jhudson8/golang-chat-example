@@ -15,6 +15,7 @@ Edit the server/client configuration as you need (```config.json```)
 ```
 {
   "Port": "5555",
+  "JSONEndpointPort": "8080",
   "Hostname": "localhost",
   "HasEnteredTheRoomMessage": "[%s] has entered the room \"%s\"",
   "HasLeftTheRoomMessage": "[%s] has left the room \"%s\"",
@@ -23,6 +24,7 @@ Edit the server/client configuration as you need (```config.json```)
   "ReceivedAMessage": "[%s] says: %s",
   "LogFile": ""
 }
+
 ```
 
 Start the server
