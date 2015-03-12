@@ -16,6 +16,7 @@ import (
   "regexp"
   "strings"
   "./config"
+  "./util"
 )
 
 // input message regular expression (look for a command /whatever)
@@ -36,7 +37,7 @@ func main() {
   username, properties := getConfig();
 
   conn, err := net.Dial("tcp", properties.Hostname + ":" + properties.Port)
-  checkForError(err, "Connection refused")
+  util.CheckForError(err, "Connection refused")
   defer conn.Close()
 
   // we're listening to chat server commands *and* user terminal commands
@@ -59,14 +60,6 @@ func getConfig() (string, config.Properties) {
   }
 }
 
-// fail if an error is provided and print out the message
-func checkForError(err error, message string) {
-  if err != nil {
-      println(message + ": ", err.Error())
-      os.Exit(1)
-  }
-}
-
 // keep watching for console input
 // send the "message" command to the chat server when we have some
 func watchForConsoleInput(conn net.Conn) {
@@ -74,7 +67,7 @@ func watchForConsoleInput(conn net.Conn) {
 
   for true {
     message, err := reader.ReadString('\n')
-    checkForError(err, "Lost console connection")
+    util.CheckForError(err, "Lost console connection")
 
     message = strings.TrimSpace(message)
     if (message != "") {
@@ -114,7 +107,7 @@ func watchForConnectionInput(username string, properties config.Properties, conn
 
   for true {
     message, err := reader.ReadString('\n')
-    checkForError(err, "Lost server connection");
+    util.CheckForError(err, "Lost server connection");
     message = strings.TrimSpace(message)
     if (message != "") {
       Command := parseCommand(message)
@@ -153,7 +146,7 @@ func watchForConnectionInput(username string, properties config.Properties, conn
 // send a command to the chat server
 // commands are in the form of /command {command specific body content}\n
 func sendCommand(command string, body string, conn net.Conn) {
-  message := fmt.Sprintf("/%v %v\n", command, body);
+  message := fmt.Sprintf("/%v %v\n", util.Encode(command), util.Encode(body));
   conn.Write([]byte(message))
 }
 
@@ -169,7 +162,7 @@ func parseInput(message string) Command {
     }
   } else {
     return Command {
-      Body: message,
+      Body: util.Decode(message),
     }
   }
 }
@@ -180,9 +173,9 @@ func parseCommand(message string) Command {
   if (len(res) == 1) {
     // we've got a match
     return Command {
-      Command: res[0][1],
-      Username: res[0][2],
-      Body: res[0][3],
+      Command: util.Decode(res[0][1]),
+      Username: util.Decode(res[0][2]),
+      Body: util.Decode(res[0][3]),
     }
   } else {
     // it's irritating that I can't return a nil value here - must be something I'm missing

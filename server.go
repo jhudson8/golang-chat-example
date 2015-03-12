@@ -17,9 +17,11 @@ import (
   "time"
   "os"
   "./config"
+  "./util"
 )
 
 var GLOBAL_ROOM = "global"
+const TIME_LAYOUT = "Jan 2 2006 15.04.05 -0700 MST"
 
 // Container for client username and connection details
 type Client struct {
@@ -61,14 +63,14 @@ func main() {
   // start the server
   properties := config.Load()
   psock, err := net.Listen("tcp", ":" + properties.Port)
-  checkForError(err, "Can't create server")
+  util.CheckForError(err, "Can't create server")
 
   fmt.Printf("Chat server started on port %v...\n", properties.Port)
  
   for {
     // accept connections
     conn, err := psock.Accept()
-    checkForError(err, "Can't accept connections")
+    util.CheckForError(err, "Can't accept connections")
 
     // keep track of the client details
     client := Client{Connection: conn, Room: GLOBAL_ROOM, Properties: properties}
@@ -215,14 +217,6 @@ func removeEntry(client *Client, arr []*Client) []*Client {
   return rtn;
 }
 
-// fail if an error is provided and print out the message
-func checkForError(err error, message string) {
-  if err != nil {
-      println(message + ": ", err.Error())
-      os.Exit(1)
-  }
-}
-
 // log an action to the log file
 // action: the action
 //   - "enter": enter a room
@@ -238,15 +232,17 @@ func logAction(action string, message string, client *Client, props config.Prope
     if (message == "") {
       message = "N/A"
     }
+    fmt.Printf("logging values %s, %s, %s\n", action, message, client.Username);
 
-    logMessage := fmt.Sprintf("username: %s, action: %s, value: %s, timestamp: %d, ip: %s\n",
-      client.Username, action, message, time.Now().String(), client.Connection.RemoteAddr())
+    logMessage := fmt.Sprintf("username: %s, action: %s, value: %s, timestamp: %s, ip: %s\n",
+      util.Encode(client.Username), util.Encode(action), util.Encode(message),
+        util.Encode(time.Now().Format(TIME_LAYOUT)), util.Encode(client.Connection.RemoteAddr().String()))
 
     f, createErr := os.OpenFile(props.LogFile, os.O_RDWR|os.O_APPEND, 0666)
-    checkForError(createErr, "Can't open or create log file")
+    util.CheckForError(createErr, "Can't open or create log file")
     defer f.Close()
 
     _, writeErr := f.Write([]byte(logMessage))
-    checkForError(writeErr, "Can't write to log file")
+    util.CheckForError(writeErr, "Can't write to log file")
   }
 }

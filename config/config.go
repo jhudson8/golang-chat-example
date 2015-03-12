@@ -6,6 +6,7 @@ import (
   "encoding/json"
   "io/ioutil"
   "os"
+  "../util"
 )
 
 type Properties struct {
@@ -23,6 +24,7 @@ func Load() Properties {
   pwd, _ := os.Getwd()
 
   payload, err := ioutil.ReadFile(pwd + "/config.json")
+  util.CheckForError(err, "Unable to read config file")
   if (err != nil) {
     println("Unable to read config file: ", err.Error())
     os.Exit(1)

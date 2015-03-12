@@ -47,3 +47,14 @@ now, this message will only be seen by others in "SomeRoom"
 hi everyone, I'm back in the lobby now
 /disconnect
 ```
+
+Log files are in the following format each value should be url decoded when examining the files
+```
+username: {username}, action: {action}, value: {action specific value}, timestamp: {timestamp}, ip: {client IP address}
+```
+
+* username: example (joe)
+* action: message/enter/leave/connect/disconnect
+* value: the chat message or room that was entered or left
+* timestamp: example (Mar 12 2015 09.13.05 -0400 EDT)
+* ip: example (127.0.0.1%3A53594); remember, it must be url encoded
