@@ -17,10 +17,18 @@ import (
   "./config"
 )
 
+var GLOBAL_ROOM = "global"
+
 // Container for client username and connection details
 type Client struct {
+  // the client's connection
   Connection net.Conn
+  // the client's username
   Username string
+  // the current room or "global"
+  Room string
+  // list of usernames we are ignoring
+  Ignore []string
 }
 
 // Close the client connection and clenup
@@ -28,7 +36,7 @@ func (client *Client) Close(doSendMessage bool) {
   if (doSendMessage) {
     // if we send the close command, the connection will terminate causing another close
     // which will send the message
-    sendMessage("leave", "", client, false)
+    sendMessage("disconnect", "", client, false)
   }
   client.Connection.Close();
   clients = removeEntry(client, clients);
@@ -64,7 +72,7 @@ func main() {
     }
 
     // keep track of the client details
-    client := Client{Connection: conn}
+    client := Client{Connection: conn, Room: GLOBAL_ROOM}
     client.Register();
 
     // allow non-blocking client request handling
@@ -101,20 +109,40 @@ func handleInput(in <-chan string, client *Client) {
     message := <- in
     if (message != "") {
       message = strings.TrimSpace(message);
-      fmt.Printf("input received \"%v\"\n", message);
+      // fmt.Printf("input received \"%v\"\n", message);
       message = strings.TrimSpace(message)
       action, body := getAction(message)
 
       if (action != "") {
         switch action {
+
+          // the user has submitted a message
           case "message":
             sendMessage("message", body, client, false)
+
+          // the user has provided their username (initialization handshake)
           case "user":
-            // TODO don't allow "[" or "]" in the username
             client.Username = body
-            sendMessage("enter", "", client, false)
-          case "leave":
+            sendMessage("connect", "", client, false)
+
+          // the user is disconnecting
+          case "disconnect":
             client.Close(false);
+
+          // the user is entering a room
+          case "enter":
+            if (body != "") {
+              client.Room = body
+              sendMessage("enter", body, client, false)
+            }
+
+          // the user is leaving the current room
+          case "leave":
+            if (client.Room != GLOBAL_ROOM) {
+              sendMessage("leave", client.Room, client, false)
+              client.Room = GLOBAL_ROOM
+            }
+
           default:
             sendMessage("unrecognized", action, client, true)
         }
@@ -125,6 +153,7 @@ func handleInput(in <-chan string, client *Client) {
 
 // sent a message to all clients (except the sender)
 func sendMessage(messageType string, message string, client *Client, thisClientOnly bool) {
+
   if (thisClientOnly) {
     // this message is only for the provided client
     message = fmt.Sprintf("/%v", messageType);
@@ -134,11 +163,18 @@ func sendMessage(messageType string, message string, client *Client, thisClientO
 
     // this message is for all but the provided client
     message = fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
-    fmt.Printf("sending message to all but %v \"%v\"\n", client.Username, message)
+    fmt.Printf("sending message to all \"%v\"\n", message)
+
     for _, _client := range clients {
       // write the message to the client
       if ((thisClientOnly && _client.Username == client.Username) ||
-          (!thisClientOnly && _client != client && _client.Username != "")) {
+          (!thisClientOnly && _client.Username != "")) {
+
+        // you should only see a message if you are in the same room
+        if (messageType == "message" && client.Room != _client.Room) {
+          continue;
+        }
+
         // you won't hear any activity if you are anonymous unless thisClientOnly
         // when current client will *only* be messaged
         fmt.Fprintln(_client.Connection, message)

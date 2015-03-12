@@ -18,10 +18,15 @@ import (
   "./config"
 )
 
-// container for chat server action details
-type Action struct {
+// input message regular expression (look for a command /whatever)
+var standardInputMessageRegex, _ = regexp.Compile(`^\/([^\s]*)\s*(.*)$`)
+// chat server command /command [username] body contents
+var chatServerResponseRegex, _ = regexp.Compile(`^\/([^\s]*)\s?(?:\[([^\]]*)\])?\s*(.*)$`)
+
+// container for chat server Command details
+type Command struct {
   // "leave", "message", "enter"
-  ActionType string
+  Command string
   Username string
   Body string
 }
@@ -73,7 +78,31 @@ func watchForConsoleInput(conn net.Conn) {
 
     message = strings.TrimSpace(message)
     if (message != "") {
-      sendCommand("message", message, conn);
+      command := parseInput(message)
+
+      if (command.Command == "") {
+        // there is no command so treat this as a simple message to be sent out
+        sendCommand("message", message, conn);
+      } else {
+        switch command.Command {
+
+          // enter a room
+          case "enter":
+            sendCommand("enter", command.Body, conn)
+
+          // leave a room
+          case "leave":
+            // leave the current room (we aren't allowing multiple rooms)
+            sendCommand("leave", "", conn)
+
+          // disconnect from the chat server
+          case "disconnect":
+            sendCommand("disconnect", "", conn)
+
+          default:
+            fmt.Printf("Unknown command\"%s\"", command.Command)
+        }
+      }
     }
   }
 }
@@ -88,43 +117,75 @@ func watchForConnectionInput(username string, properties config.Properties, conn
     checkForError(err, "Lost server connection");
     message = strings.TrimSpace(message)
     if (message != "") {
-      action := parseAction(message)
-      switch action.ActionType {
+      Command := parseCommand(message)
+      switch Command.Command {
+
+        // the handshake - send out our username
         case "ready":
-          // the handshake - send out our username
           sendCommand("user", username, conn)
-          fmt.Printf(properties.HasEnteredTheRoomMessage + "\n", username)
+
+        // the user has connected to the chat server
+        case "connect":
+          fmt.Printf(properties.HasEnteredTheLobbyMessage + "\n", Command.Username)
+
+        // the user has disconnected
+        case "disconnect":
+          fmt.Printf(properties.HasLeftTheLobbyMessage + "\n", Command.Username)
+
+        // the user has entered a room
         case "enter":
-          fmt.Printf(properties.HasEnteredTheRoomMessage + "\n", action.Username)
+          fmt.Printf(properties.HasEnteredTheRoomMessage + "\n", Command.Username, Command.Body)
+
+        // the user has left a room
         case "leave":
-          fmt.Printf(properties.HasLeftTheRoomMessage + "\n", action.Username)
+          fmt.Printf(properties.HasLeftTheRoomMessage + "\n", Command.Username, Command.Body)
+
+        // the user has sent a message
         case "message":
-          fmt.Printf(properties.ReceivedAMessage + "\n" + "\n", action.Username, action.Body)
+          if (Command.Username != username) {
+            fmt.Printf(properties.ReceivedAMessage + "\n", Command.Username, Command.Body)
+          }
       }
     }
   }
 }
 
 // send a command to the chat server
-// commands are in the form of /action {command specific body content}\n
-func sendCommand(action string, body string, conn net.Conn) {
-  message := fmt.Sprintf("/%v %v\n", action, body);
+// commands are in the form of /command {command specific body content}\n
+func sendCommand(command string, body string, conn net.Conn) {
+  message := fmt.Sprintf("/%v %v\n", command, body);
   conn.Write([]byte(message))
 }
 
-// look for "/action [name] body contents" where [name] is optional
-func parseAction(message string) Action {
-  actionRegex, _ := regexp.Compile(`^\/([^\s]*)\s?(?:\[([^\]]*)\])?\s*(.*)$`)
-  res := actionRegex.FindAllStringSubmatch(message, -1)
+// parse the input message and return an Command
+// if there is a command the "Command" will != "", otherwise just Body will exist
+func parseInput(message string) Command {
+  res := standardInputMessageRegex.FindAllStringSubmatch(message, -1)
+  if (len(res) == 1) {
+    // there is a command
+    return Command {
+      Command: res[0][1],
+      Body: res[0][2],
+    }
+  } else {
+    return Command {
+      Body: message,
+    }
+  }
+}
+
+// look for "/Command [name] body contents" where [name] is optional
+func parseCommand(message string) Command {
+  res := chatServerResponseRegex.FindAllStringSubmatch(message, -1)
   if (len(res) == 1) {
     // we've got a match
-    return Action{
-      ActionType: res[0][1],
+    return Command {
+      Command: res[0][1],
       Username: res[0][2],
       Body: res[0][3],
     }
   } else {
     // it's irritating that I can't return a nil value here - must be something I'm missing
-    return Action{}
+    return Command{}
   }
 }

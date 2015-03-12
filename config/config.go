@@ -13,6 +13,8 @@ type Properties struct {
   Port string
   HasEnteredTheRoomMessage string
   HasLeftTheRoomMessage string
+  HasEnteredTheLobbyMessage string
+  HasLeftTheLobbyMessage string
   ReceivedAMessage string
 }
 
@@ -37,6 +39,8 @@ func Load() Properties {
     Port: dat["Port"].(string),
     HasEnteredTheRoomMessage: dat["HasEnteredTheRoomMessage"].(string),
     HasLeftTheRoomMessage: dat["HasLeftTheRoomMessage"].(string),
+    HasEnteredTheLobbyMessage: dat["HasEnteredTheLobbyMessage"].(string),
+    HasLeftTheLobbyMessage: dat["HasLeftTheLobbyMessage"].(string),
     ReceivedAMessage: dat["ReceivedAMessage"].(string),
   }
 }
