@@ -20,7 +20,7 @@ import (
   "./util"
 )
 
-var GLOBAL_ROOM = "global"
+const GLOBAL_ROOM = "global"
 const TIME_LAYOUT = "Jan 2 2006 15.04.05 -0700 MST"
 
 // Container for client username and connection details
