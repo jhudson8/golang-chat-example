@@ -48,11 +48,17 @@ The commands are available
 A sample client session is below
 ```
 > go run client.go joe
+[joe] has entered the lobby
 hello everyone, I am now in the lobby
+[billy] has entered the lobby
+[billy] says: hello, I'm here too
 /enter SomeRoom
-now, this message will only be seen by others in "SomeRoom"
+[joe] has entered the room "SomeRoom"
+Billy can't hear this message because I'm in the SomeRoom private room         
 /leave
-hi everyone, I'm back in the lobby now
+[joe] has left the room "SomeRoom"
+now Billy can ear me again
+[billy] says: I sure can
 /disconnect
 ```
 
