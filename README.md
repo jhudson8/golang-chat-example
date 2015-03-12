@@ -53,8 +53,8 @@ Log files are in the following format each value should be url decoded when exam
 username: {username}, action: {action}, value: {action specific value}, timestamp: {timestamp}, ip: {client IP address}
 ```
 
-* username: example (joe)
-* action: message/enter/leave/connect/disconnect
+* username: example ```joe```
+* action: ```message```/```enter```/```leave```/```connect```/```disconnect```
 * value: the chat message or room that was entered or left
-* timestamp: example (Mar 12 2015 09.13.05 -0400 EDT)
-* ip: example (127.0.0.1%3A53594); remember, it is url encoded so the %3A is a ":"
+* timestamp: example ```Mar 12 2015 09.13.05 -0400 EDT```
+* ip: example ```127.0.0.1%3A53594```; remember, it is url encoded so the %3A is a ":"
