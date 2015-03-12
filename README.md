@@ -1,7 +1,9 @@
 # golang-chat-example
 Simple chat client and server example to help me learn golang
 
-To run the server
+
+Chat Server
+-----------
 
 Clone the repo
 ```
@@ -28,6 +30,9 @@ Start the server
 > go run server.go
 ```
 
+
+Chat Client
+-----------
 In other terminal windows, create as many clients as you wish
 ```
 > go run client.go
@@ -51,6 +56,19 @@ hi everyone, I'm back in the lobby now
 /disconnect
 ```
 
+JSON Endpoint
+----------
+The JSON endpoint port can be configured using the ```JSONEndpointPort``` port (by default, 8080).  When the chat server is stated, the following endpoints are available
+
+* ```/messages/all```: all messages
+* ```/messages/search/{search term}```: example ```localhost:8080/messages/search/hello```
+* ```/messages/user/{username}```: example ```localhost:8080/messages/user/joe
+
+The message query will only use the messages from the running server (previously logged messages will not be evaluated).
+
+
+Chat Log
+----------
 Log files are in the following format each value should be url decoded when examining the files
 ```
 username: {username}, action: {action}, value: {action specific value}, timestamp: {timestamp}, ip: {client IP address}
