@@ -109,8 +109,6 @@ func handleInput(in <-chan string, client *Client, props config.Properties) {
   for {
     message := <- in
     if (message != "") {
-      message = strings.TrimSpace(message);
-      // fmt.Printf("input received \"%v\"\n", message);
       message = strings.TrimSpace(message)
       action, body := getAction(message)
 
@@ -158,15 +156,14 @@ func sendMessage(messageType string, message string, client *Client, thisClientO
   if (thisClientOnly) {
     // this message is only for the provided client
     message = fmt.Sprintf("/%v", messageType);
-    // fmt.Printf("sending message to current client %v \"%v\"\n", client.Username, message)
     fmt.Fprintln(client.Connection, message)
-  } else if (client.Username != "") {
 
+  } else if (client.Username != "") {
+    // this message is for all but the provided client
     logAction(messageType, message, client, props);
 
-    // this message is for all but the provided client
-    message = fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
-    // fmt.Printf("sending message to all \"%v\"\n", message)
+    // construct the payload to be sent to clients
+    payload := fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
 
     for _, _client := range clients {
       // write the message to the client
@@ -180,7 +177,7 @@ func sendMessage(messageType string, message string, client *Client, thisClientO
 
         // you won't hear any activity if you are anonymous unless thisClientOnly
         // when current client will *only* be messaged
-        fmt.Fprintln(_client.Connection, message)
+        fmt.Fprintln(_client.Connection, payload)
       }
     }
   }
