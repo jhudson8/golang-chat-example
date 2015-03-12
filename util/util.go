@@ -10,7 +10,9 @@ import (
   "fmt"
 )
 
+// time format for log files and JSON response
 const TIME_LAYOUT = "Jan 2 2006 15.04.05 -0700 MST"
+// thins we are encoding when sending stuff over the wire to clients
 var ENCODING_UNENCODED_TOKENS = []string{"%", ":", "[", "]", ",", "\""}
 var ENCODING_ENCODED_TOKENS = []string{"%25", "%3A", "%5B", "%5D", "%2C", "%22"}
 var DECODING_UNENCODED_TOKENS = []string{":", "[", "]", ",", "\"", "%"}
@@ -45,39 +47,55 @@ func (client *Client) Register() {
   clients = append(clients, client);
 }
 
-
+// log content container
 type Action struct {
+  // "message", "leave", "enter", "connect", "disconnect"
   Command string      `json:"command"`
+  // action specific content - either the chat message or room that was entered/left
   Content string      `json:"content"`
+  // the username that performed the action
   Username string     `json:"username"`
+  // ip address of the uwer
   IP string           `json:"ip"`
+  // timestamp of the activity
   Timestamp string    `json:"timestamp"`
 }
 
+// general configuration properties
 type Properties struct {
+  // chat server hostname (for client connection)
   Hostname string
+  // chat server port (for server execution and client connection)
   Port string
+  // port used for JSON server
   JSONEndpointPort string
+  // message format for when someone enters a private room
   HasEnteredTheRoomMessage string
+  // message format for when someone leaves a private room
   HasLeftTheRoomMessage string
+  // message format for when someone connects
   HasEnteredTheLobbyMessage string
+  // message format for when someone disconnects
   HasLeftTheLobbyMessage string
+  // message format for when someone sends a chat
   ReceivedAMessage string
+  // the absolute log file location
   LogFile string
 }
 
-
+// all actions (chats, enter/leave private room, connect/disconnect)
+// that have occured while the server has been running
 var actions = []Action{}
+// cached config properties
 var config = Properties{}
 // static client list
 var clients []*Client
 
-
+// load the configuration properties from the "config.json" file
 func LoadConfig() Properties {
   if (config.Port != "") {
     return config;
   }
-
   pwd, _ := os.Getwd()
 
   payload, err := ioutil.ReadFile(pwd + "/config.json")
