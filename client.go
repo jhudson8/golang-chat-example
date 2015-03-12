@@ -35,7 +35,7 @@ func main() {
   defer conn.Close()
 
   // we're listening to chat server commands *and* user terminal commands
-  go watchForConnectionInput(username, conn)
+  go watchForConnectionInput(username, properties, conn)
   for true {
     watchForConsoleInput(conn)
   }
@@ -80,7 +80,7 @@ func watchForConsoleInput(conn net.Conn) {
 
 // listen for any commands that come from the chat server
 // like someone entered the room, said something, or left the room
-func watchForConnectionInput(username string, conn net.Conn) {
+func watchForConnectionInput(username string, properties config.Properties, conn net.Conn) {
   reader := bufio.NewReader(conn)
 
   for true {
@@ -93,11 +93,13 @@ func watchForConnectionInput(username string, conn net.Conn) {
         case "ready":
           // the handshake - send out our username
           sendCommand("user", username, conn)
-          fmt.Printf("[%s] has entered the room\n", username)
+          fmt.Printf(properties.HasEnteredTheRoomMessage + "\n", username)
         case "enter":
-          fmt.Printf("> %v has entered the room\n", username)
+          fmt.Printf(properties.HasEnteredTheRoomMessage + "\n", action.Username)
+        case "leave":
+          fmt.Printf(properties.HasLeftTheRoomMessage + "\n", action.Username)
         case "message":
-          fmt.Printf("   [%v] %v\n", username, action.Body)
+          fmt.Printf(properties.ReceivedAMessage + "\n" + "\n", action.Username, action.Body)
       }
     }
   }

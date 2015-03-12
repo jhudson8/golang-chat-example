@@ -1,0 +1,7 @@
+{
+  "Port": "5555",
+  "Hostname": "localhost",
+  "HasEnteredTheRoomMessage": "[%s] has entered the room",
+  "HasLeftTheRoomMessage": "[%s] has left the room",
+  "ReceivedAMessage": "    [%s] %s"
+}
