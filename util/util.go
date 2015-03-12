@@ -27,7 +27,7 @@ type Client struct {
   // the current room or "global"
   Room string
   // list of usernames we are ignoring
-  Ignore []string
+  ignoring []string
   // the config properties
   Properties Properties
 }
@@ -45,6 +45,19 @@ func (client *Client) Close(doSendMessage bool) {
 // Register the connection and cache it
 func (client *Client) Register() {
   clients = append(clients, client);
+}
+
+func (client *Client) Ignore(username string) {
+  client.ignoring = append(client.ignoring, username)
+}
+
+func (client *Client) IsIgnoring(username string) bool {
+  for _, value := range client.ignoring {
+    if (value == username) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // log content container
@@ -79,6 +92,8 @@ type Properties struct {
   HasLeftTheLobbyMessage string
   // message format for when someone sends a chat
   ReceivedAMessage string
+  // message received when the user is ignoring someone else
+  IgnoringMessage string
   // the absolute log file location
   LogFile string
 }
@@ -115,6 +130,7 @@ func LoadConfig() Properties {
     HasEnteredTheLobbyMessage: dat["HasEnteredTheLobbyMessage"].(string),
     HasLeftTheLobbyMessage: dat["HasLeftTheLobbyMessage"].(string),
     ReceivedAMessage: dat["ReceivedAMessage"].(string),
+    IgnoringMessage: dat["IgnoringMessage"].(string),
     LogFile: dat["LogFile"].(string),
   }
   config = rtn;
@@ -163,7 +179,7 @@ func SendClientMessage(messageType string, message string, client *Client, thisC
           (!thisClientOnly && _client.Username != "")) {
 
         // you should only see a message if you are in the same room
-        if (messageType == "message" && client.Room != _client.Room) {
+        if (messageType == "message" && client.Room != _client.Room || _client.IsIgnoring(client.Username)) {
           continue;
         }
 

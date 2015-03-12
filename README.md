@@ -43,8 +43,9 @@ In other terminal windows, create as many clients as you wish
 You can send commands or messages.  Commands begin with ```/``` and messages are anything else.
 The commands are available
 
-* ```enter```: enter a private room (only messages from others in the same private room will be visible).  No need to explicitely create the room and you can only be in a single room at a time.
-* ```leave```: leave a private room to go back to the main lobby
+* ```enter```: enter a private room (only messages from others in the same private room will be visible).  No need to explicitely create the room and you can only be in a single room at a time. ```/enter SomeRoom```
+* ```leave```: leave a private room to go back to the main lobby ```/leave```
+* ```ignore```: ignore another user ```/ignore joe```
 * ```disconnect```: disconnect from the chat server
 
 A sample client session is below
@@ -61,6 +62,9 @@ Billy can't hear this message because I'm in the SomeRoom private room
 [joe] has left the room "SomeRoom"
 now Billy can ear me again
 [billy] says: I sure can
+/ignore billy
+You are ignoring billy
+Haha!  Billy can't hear my message
 /disconnect
 ```
 
@@ -80,7 +84,7 @@ Chat Log
 Log files are in CSV format with the columns shown below.  You *must* set the ```LogFile``` config value to be the absolute file location or no logs will be created.
 
 1. ***username***: the user that performed the action
-2. ***action***: the action that was taken (```message```/```enter```/```leave```/```connect```/```disconnect```)
+2. ***action***: the action that was taken (```message```/```enter```/```leave```/```ignore```/```connect```/```disconnect```)
 3. ***value***: the chat message or room that was entered or left
 4. ***timestamp***: example ```Mar 12 2015 09.13.05 -0400 EDT```
 5. ***ip***: example ```127.0.0.1:53594```

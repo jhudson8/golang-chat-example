@@ -82,6 +82,10 @@ func watchForConsoleInput(conn net.Conn) {
           case "enter":
             sendCommand("enter", command.Body, conn)
 
+          // ignore someone
+          case "ignore":
+            sendCommand("ignore", command.Body, conn)
+
           // leave a room
           case "leave":
             // leave the current room (we aren't allowing multiple rooms)
@@ -137,6 +141,10 @@ func watchForConnectionInput(username string, properties util.Properties, conn n
           if (Command.Username != username) {
             fmt.Printf(properties.ReceivedAMessage + "\n", Command.Username, Command.Body)
           }
+
+        // the user has connected to the chat server
+        case "ignoring":
+          fmt.Printf(properties.IgnoringMessage + "\n", Command.Body)
       }
     }
   }

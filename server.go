@@ -94,6 +94,11 @@ func handleInput(in <-chan string, client *util.Client, props util.Properties) {
           case "disconnect":
             client.Close(false);
 
+          // the user is disconnecting
+          case "ignore":
+            client.Ignore(body)
+            util.SendClientMessage("ignoring", body, client, false, props)
+
           // the user is entering a room
           case "enter":
             if (body != "") {
