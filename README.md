@@ -28,7 +28,7 @@ Start the server
 > go run server.go
 ```
 
-In another terminal window, create as many clients as you wish
+In other terminal windows, create as many clients as you wish
 
 You can send commands or messages.  Commands begin with "/" and messages are anything else.
 The commands are available
