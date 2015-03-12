@@ -11,10 +11,10 @@ import (
 )
 
 const TIME_LAYOUT = "Jan 2 2006 15.04.05 -0700 MST"
-var ENCODING_UNENCODED_TOKENS = []string{"%", ":", "[", "]", ","}
-var ENCODING_ENCODED_TOKENS = []string{"%25", "%3A", "%5B", "%5D", "%2C"}
-var DECODING_UNENCODED_TOKENS = []string{":", "[", "]", ",", "%"}
-var DECODING_ENCODED_TOKENS = []string{"%3A", "%5B", "%5D", "%2C", "%25"}
+var ENCODING_UNENCODED_TOKENS = []string{"%", ":", "[", "]", ",", "\""}
+var ENCODING_ENCODED_TOKENS = []string{"%25", "%3A", "%5B", "%5D", "%2C", "%22"}
+var DECODING_UNENCODED_TOKENS = []string{":", "[", "]", ",", "\"", "%"}
+var DECODING_ENCODED_TOKENS = []string{"%3A", "%5B", "%5D", "%2C", "%22", "%25"}
 
 // Container for client username and connection details
 type Client struct {
@@ -165,6 +165,11 @@ func CheckForError(err error, message string) {
   }
 }
 
+// double quote the single quotes
+func EncodeCSV(value string) (string) {
+  return strings.Replace(value, "\"", "\"\"", -1)
+}
+
 // simple http-ish encoding to handle special characters
 func Encode(value string) (string) {
   return replace(ENCODING_UNENCODED_TOKENS, ENCODING_ENCODED_TOKENS, value)
@@ -212,16 +217,21 @@ func LogAction(action string, message string, client *Client, props Properties) 
     }
     fmt.Printf("logging values %s, %s, %s\n", action, message, client.Username);
 
-    logMessage := fmt.Sprintf("username: %s, action: %s, value: %s, timestamp: %s, ip: %s\n",
-      Encode(client.Username), Encode(action), Encode(message),
-        Encode(timestamp), Encode(ip))
+    logMessage := fmt.Sprintf("\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"\n",
+      EncodeCSV(client.Username), EncodeCSV(action), EncodeCSV(message),
+        EncodeCSV(timestamp), EncodeCSV(ip))
 
-    f, createErr := os.OpenFile(props.LogFile, os.O_RDWR|os.O_APPEND, 0666)
-    CheckForError(createErr, "Can't open or create log file")
+    f, err := os.OpenFile(props.LogFile, os.O_APPEND|os.O_WRONLY, 0600)
+    if (err != nil) {
+      // try to create it
+      err = ioutil.WriteFile(props.LogFile, []byte{}, 0600)
+      f, err = os.OpenFile(props.LogFile, os.O_APPEND|os.O_WRONLY, 0600)
+      CheckForError(err, "Cant create log file")
+    }
+
     defer f.Close()
-
-    _, writeErr := f.Write([]byte(logMessage))
-    CheckForError(writeErr, "Can't write to log file")
+    _, err = f.WriteString(logMessage)
+    CheckForError(err, "Can't write to log file")
   }
 }
 

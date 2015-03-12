@@ -69,13 +69,10 @@ The message query will only use the messages from the running server (previously
 
 Chat Log
 ----------
-Log files are in the following format each value should be url decoded when examining the files
-```
-username: {username}, action: {action}, value: {action specific value}, timestamp: {timestamp}, ip: {client IP address}
-```
+Log files are in CSV format with the following columns
 
-* username: example ```joe```
-* action: ```message```/```enter```/```leave```/```connect```/```disconnect```
-* value: the chat message or room that was entered or left
-* timestamp: example ```Mar 12 2015 09.13.05 -0400 EDT```
-* ip: example ```127.0.0.1%3A53594```; remember, it is url encoded so the %3A is a ":"
+1. ***username***: the user that performed the action
+2. ***action***: the action that was taken (```message```/```enter```/```leave```/```connect```/```disconnect```)
+3. ***value***: the chat message or room that was entered or left
+4. ***timestamp***: example ```Mar 12 2015 09.13.05 -0400 EDT```
+5. ***ip***: example ```127.0.0.1:53594```
