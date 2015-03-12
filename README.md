@@ -62,7 +62,7 @@ The JSON endpoint port can be configured using the ```JSONEndpointPort``` port (
 
 * ```/messages/all```: all messages
 * ```/messages/search/{search term}```: example ```localhost:8080/messages/search/hello```
-* ```/messages/user/{username}```: example ```localhost:8080/messages/user/joe
+* ```/messages/user/{username}```: example ```localhost:8080/messages/user/joe```
 
 The message query will only use the messages from the running server (previously logged messages will not be evaluated).
 
