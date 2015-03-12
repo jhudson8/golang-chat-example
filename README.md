@@ -35,7 +35,7 @@ Chat Client
 -----------
 In other terminal windows, create as many clients as you wish
 ```
-> go run client.go
+> go run client.go {username}
 ```
 
 You can send commands or messages.  Commands begin with ```/``` and messages are anything else.
