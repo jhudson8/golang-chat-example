@@ -33,12 +33,12 @@ In other terminal windows, create as many clients as you wish
 > go run client.go
 ```
 
-You can send commands or messages.  Commands begin with "/" and messages are anything else.
+You can send commands or messages.  Commands begin with ```/``` and messages are anything else.
 The commands are available
 
-* enter: enter a private room (only messages from others in the same private room will be visible).  No need to explicitely create the room and you can only be in a single room at a time.
-* leave: leave a private room to go back to the main lobby
-* disconnect: disconnect from the chat server
+* ```enter```: enter a private room (only messages from others in the same private room will be visible).  No need to explicitely create the room and you can only be in a single room at a time.
+* ```leave```: leave a private room to go back to the main lobby
+* ```disconnect```: disconnect from the chat server
 
 A sample client session is below
 ```
