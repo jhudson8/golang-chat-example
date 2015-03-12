@@ -25,16 +25,10 @@ func Load() Properties {
 
   payload, err := ioutil.ReadFile(pwd + "/config.json")
   util.CheckForError(err, "Unable to read config file")
-  if (err != nil) {
-    println("Unable to read config file: ", err.Error())
-    os.Exit(1)
-  }
 
   var dat map[string]interface{}
-  if err := json.Unmarshal(payload, &dat); err != nil {
-    println("Invalid JSON in config file: ", err.Error())
-    os.Exit(1)
-  }
+  err = json.Unmarshal(payload, &dat)
+  util.CheckForError(err, "Invalid JSON in config file")
 
   // probably a better way to unmarshall directly in the Properties struct but I haven't found it
   return Properties {
