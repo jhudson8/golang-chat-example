@@ -29,11 +29,21 @@ Start the server
 ```
 
 In another terminal window, create as many clients as you wish
+
+You can send commands or messages.  Commands begin with "/" and messages are anything else.
+The commands are available
+
+* enter: enter a private room (only messages from others in the same private room will be visible).  No need to explicitely create the room and you can only be in a single room at a time.
+* leave: leave a private room to go back to the main lobby
+* disconnect: disconnect from the chat server
+
+A sample client session is below
 ```
-> go run client.go {username}       // for example: "go run client.go joe"
-hello, this message will be sent  // all clients connected to the lobby will receive this message
-/enter SomeRoom                   // enter the private room called "SomeRoom" - only other clients in this room will see messages
-this will only be in SomeRoom     // any messages when in a room will only be visible bo others in the same room
-/leave SomeRoom                   // go back to the lobby
-/disconnect                       // disconnect from the chat server
+> go run client.go joe
+hello everyone, I am now in the lobby
+/enter SomeRoom
+now, this message will only be seen by others in "SomeRoom"
+/leave
+hi everyone, I'm back in the lobby now
+/disconnect
 ```
