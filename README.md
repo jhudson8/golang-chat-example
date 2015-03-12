@@ -33,6 +33,7 @@ In another terminal window, create as many clients as you wish
 > go run client.go {username}       // for example: "go run client.go joe"
 hello, this message will be sent  // all clients connected to the lobby will receive this message
 /enter SomeRoom                   // enter the private room called "SomeRoom" - only other clients in this room will see messages
+this will only be in SomeRoom     // any messages when in a room will only be visible bo others in the same room
 /leave SomeRoom                   // go back to the lobby
 /disconnect                       // disconnect from the chat server
 ```
