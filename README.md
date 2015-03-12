@@ -57,4 +57,4 @@ username: {username}, action: {action}, value: {action specific value}, timestam
 * action: message/enter/leave/connect/disconnect
 * value: the chat message or room that was entered or left
 * timestamp: example (Mar 12 2015 09.13.05 -0400 EDT)
-* ip: example (127.0.0.1%3A53594); remember, it must be url encoded
+* ip: example (127.0.0.1%3A53594); remember, it is url encoded so the %3A is a ":"
