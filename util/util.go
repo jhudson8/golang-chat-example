@@ -3,12 +3,159 @@ package util
 import (
   "os"
   "strings"
+  "encoding/json"
+  "io/ioutil"
+  "net"
+  "time"
+  "fmt"
 )
 
+const TIME_LAYOUT = "Jan 2 2006 15.04.05 -0700 MST"
 var ENCODING_UNENCODED_TOKENS = []string{"%", ":", "[", "]", ","}
 var ENCODING_ENCODED_TOKENS = []string{"%25", "%3A", "%5B", "%5D", "%2C"}
 var DECODING_UNENCODED_TOKENS = []string{":", "[", "]", ",", "%"}
 var DECODING_ENCODED_TOKENS = []string{"%3A", "%5B", "%5D", "%2C", "%25"}
+
+// Container for client username and connection details
+type Client struct {
+  // the client's connection
+  Connection net.Conn
+  // the client's username
+  Username string
+  // the current room or "global"
+  Room string
+  // list of usernames we are ignoring
+  Ignore []string
+  // the config properties
+  Properties Properties
+}
+// Close the client connection and clenup
+func (client *Client) Close(doSendMessage bool) {
+  if (doSendMessage) {
+    // if we send the close command, the connection will terminate causing another close
+    // which will send the message
+    SendClientMessage("disconnect", "", client, false, client.Properties)
+  }
+  client.Connection.Close();
+  clients = removeEntry(client, clients);
+}
+
+// Register the connection and cache it
+func (client *Client) Register() {
+  clients = append(clients, client);
+}
+
+
+type Action struct {
+  Command string      `json:"command"`
+  Content string      `json:"content"`
+  Username string     `json:"username"`
+  IP string           `json:"ip"`
+  Timestamp string    `json:"timestamp"`
+}
+
+type Properties struct {
+  Hostname string
+  Port string
+  JSONEndpointPort string
+  HasEnteredTheRoomMessage string
+  HasLeftTheRoomMessage string
+  HasEnteredTheLobbyMessage string
+  HasLeftTheLobbyMessage string
+  ReceivedAMessage string
+  LogFile string
+}
+
+
+var actions = []Action{}
+var config = Properties{}
+// static client list
+var clients []*Client
+
+
+func LoadConfig() Properties {
+  if (config.Port != "") {
+    return config;
+  }
+
+  pwd, _ := os.Getwd()
+
+  payload, err := ioutil.ReadFile(pwd + "/config.json")
+  CheckForError(err, "Unable to read config file")
+
+  var dat map[string]interface{}
+  err = json.Unmarshal(payload, &dat)
+  CheckForError(err, "Invalid JSON in config file")
+
+  // probably a better way to unmarshall directly in the Properties struct but I haven't found it
+  var rtn = Properties {
+    Hostname: dat["Hostname"].(string),
+    Port: dat["Port"].(string),
+    JSONEndpointPort: dat["JSONEndpointPort"].(string),
+    HasEnteredTheRoomMessage: dat["HasEnteredTheRoomMessage"].(string),
+    HasLeftTheRoomMessage: dat["HasLeftTheRoomMessage"].(string),
+    HasEnteredTheLobbyMessage: dat["HasEnteredTheLobbyMessage"].(string),
+    HasLeftTheLobbyMessage: dat["HasLeftTheLobbyMessage"].(string),
+    ReceivedAMessage: dat["ReceivedAMessage"].(string),
+    LogFile: dat["LogFile"].(string),
+  }
+  config = rtn;
+  return rtn;
+}
+
+// remove client entry from stored clients
+func removeEntry(client *Client, arr []*Client) []*Client {
+  rtn := arr
+  index := -1
+  for i, value := range arr {
+    if (value == client) {
+      index = i;
+      break;
+    }
+  }
+
+  if (index >= 0) {
+    // we have a match, create a new array without the match
+    rtn = make([]*Client, len(arr)-1)
+    copy(rtn, arr[:index])
+    copy(rtn[index:], arr[index+1:])
+  }
+
+  return rtn;
+}
+
+// sent a message to all clients (except the sender)
+func SendClientMessage(messageType string, message string, client *Client, thisClientOnly bool, props Properties) {
+
+  if (thisClientOnly) {
+    // this message is only for the provided client
+    message = fmt.Sprintf("/%v", messageType);
+    fmt.Fprintln(client.Connection, message)
+
+  } else if (client.Username != "") {
+    // this message is for all but the provided client
+    LogAction(messageType, message, client, props);
+
+    // construct the payload to be sent to clients
+    payload := fmt.Sprintf("/%v [%v] %v", messageType, client.Username, message);
+
+    for _, _client := range clients {
+      // write the message to the client
+      if ((thisClientOnly && _client.Username == client.Username) ||
+          (!thisClientOnly && _client.Username != "")) {
+
+        // you should only see a message if you are in the same room
+        if (messageType == "message" && client.Room != _client.Room) {
+          continue;
+        }
+
+        // you won't hear any activity if you are anonymous unless thisClientOnly
+        // when current client will *only* be messaged
+        fmt.Fprintln(_client.Connection, payload)
+      }
+    }
+  }
+}
 
 // fail if an error is provided and print out the message
 func CheckForError(err error, message string) {
@@ -34,4 +181,73 @@ func replace(fromTokens []string, toTokens []string, value string) (string) {
       value = strings.Replace(value, fromTokens[i], toTokens[i], -1)
   }
   return value;
+}
+
+// log an action to the log file
+// action: the action
+//   - "enter": enter a room
+//   - "leave": leave a room
+//   - "connect": connect to the lobby
+//   - "disconnect": disconnect from the lobby
+//   - "message": post a message
+//   - "ignore": ignore a user
+// message: message/context appropriate for the action
+// client: the initiating client
+func LogAction(action string, message string, client *Client, props Properties) {
+  ip := client.Connection.RemoteAddr().String()
+  timestamp := time.Now().Format(TIME_LAYOUT)
+
+  // keep track of the actions to query against for the JSON endpoing
+  actions = append(actions, Action {
+    Command: action,
+    Content: message,
+    Username: client.Username,
+    IP: ip,
+    Timestamp: timestamp,
+  })
+
+  if (props.LogFile != "") {
+    if (message == "") {
+      message = "N/A"
+    }
+    fmt.Printf("logging values %s, %s, %s\n", action, message, client.Username);
+
+    logMessage := fmt.Sprintf("username: %s, action: %s, value: %s, timestamp: %s, ip: %s\n",
+      Encode(client.Username), Encode(action), Encode(message),
+        Encode(timestamp), Encode(ip))
+
+    f, createErr := os.OpenFile(props.LogFile, os.O_RDWR|os.O_APPEND, 0666)
+    CheckForError(createErr, "Can't open or create log file")
+    defer f.Close()
+
+    _, writeErr := f.Write([]byte(logMessage))
+    CheckForError(writeErr, "Can't write to log file")
+  }
+}
+
+func QueryMessages(actionType string, search string, username string) ([]Action) {
+
+  isMatch := func(action Action) (bool) {
+    if (actionType != "" && action.Command != actionType) {
+      return false;
+    }
+    if (search != "" && !strings.Contains(action.Content, search)) {
+      return false;
+    }
+    if (username != "" && action.Username != username) {
+      return false;
+    }
+    return true;
+  }
+
+  rtn := make([]Action, 0, len(actions))
+
+  // find out which items match the search criteria and add them to what we will be returning
+  for _, value := range actions {
+    if (isMatch(value)) {
+      rtn = append(rtn, value)
+    }
+  }
+
+  return rtn;
 }

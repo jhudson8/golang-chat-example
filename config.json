@@ -1,5 +1,6 @@
 {
   "Port": "5555",
+  "JSONEndpointPort": "8080",
   "Hostname": "localhost",
   "HasEnteredTheRoomMessage": "[%s] has entered the room \"%s\"",
   "HasLeftTheRoomMessage": "[%s] has left the room \"%s\"",

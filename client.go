@@ -15,7 +15,6 @@ import (
   "bufio"
   "regexp"
   "strings"
-  "./config"
   "./util"
 )
 
@@ -48,15 +47,15 @@ func main() {
 }
 
 // parse out the arguments to be used when connecting to the chat server
-func getConfig() (string, config.Properties) {
+func getConfig() (string, util.Properties) {
   if (len(os.Args) >= 2) {
     username := os.Args[1]
-    properties := config.Load()
+    properties := util.LoadConfig()
     return username, properties
   } else {
     println("You must provide the username as the first parameter ")
     os.Exit(1)
-    return "", config.Properties{}
+    return "", util.Properties{}
   }
 }
 
@@ -102,7 +101,7 @@ func watchForConsoleInput(conn net.Conn) {
 
 // listen for any commands that come from the chat server
 // like someone entered the room, said something, or left the room
-func watchForConnectionInput(username string, properties config.Properties, conn net.Conn) {
+func watchForConnectionInput(username string, properties util.Properties, conn net.Conn) {
   reader := bufio.NewReader(conn)
 
   for true {
