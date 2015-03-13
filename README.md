@@ -65,7 +65,7 @@ now Billy can ear me again
 [billy] says: I sure can
 /ignore billy
 You are ignoring billy
-Haha!  Billy can't hear my message
+Hey Billy, you can hear me but I can't hear you!
 /disconnect
 ```
 
