@@ -96,7 +96,7 @@ func watchForConsoleInput(conn net.Conn) {
             sendCommand("disconnect", "", conn)
 
           default:
-            fmt.Printf("Unknown command\"%s\"", command.Command)
+            fmt.Printf("Unknown command \"%s\"\n", command.Command)
         }
       }
     }
