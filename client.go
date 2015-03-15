@@ -26,9 +26,7 @@ var chatServerResponseRegex, _ = regexp.Compile(`^\/([^\s]*)\s?(?:\[([^\]]*)\])?
 // container for chat server Command details
 type Command struct {
   // "leave", "message", "enter"
-  Command string
-  Username string
-  Body string
+  Command, Username, Body string
 }
 
 // program main
