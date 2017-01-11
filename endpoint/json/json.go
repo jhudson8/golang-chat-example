@@ -3,7 +3,7 @@ package json
 import (
   "net/http"
   "encoding/json"
-  "../.././util"
+  "github.com/jhudson8/golang-chat-example/util"
 )
 
 const SEARCH_PATH = "/messages/search/"

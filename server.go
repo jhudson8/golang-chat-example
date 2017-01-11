@@ -14,8 +14,8 @@ import (
   "bufio"
   "strings"
   "regexp"
-  "./util"
-  "./endpoint/json"
+  "github.com/jhudson8/golang-chat-example/util"
+  "github.com/jhudson8/golang-chat-example/endpoint/json"
 )
 
 const LOBBY = "lobby"
