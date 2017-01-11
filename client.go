@@ -15,7 +15,7 @@ import (
   "bufio"
   "regexp"
   "strings"
-  "./util"
+  "github.com/jhudson8/golang-chat-example/util"
 )
 
 // input message regular expression (look for a command /whatever)
